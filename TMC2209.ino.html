@@ -1,0 +1,63 @@
+/**
+ * Author Teemu Mäntykallio
+ * Initializes the library and runs the stepper
+ * motor in alternating directions.
+ */
+
+#include <TMCStepper.h>
+
+#define EN_PIN           38 // Enable
+#define DIR_PIN          8 // Direction
+#define STEP_PIN         9 // Step
+#define SW_RX            5 // TMC2208/TMC2224 SoftwareSerial receive pin
+#define SW_TX            6 // TMC2208/TMC2224 SoftwareSerial transmit pin
+#define SERIAL_PORT Serial1 // TMC2208/TMC2224 HardwareSerial port
+#define DRIVER_ADDRESS 0b00 // TMC2209 Driver address according to MS1 and MS2
+#define MICROSTEPS 32
+#define MOTOR_STEPS 200
+#define R_SENSE 0.11f // Match to your driver
+                     
+TMC2209Stepper driver(SW_RX, SW_TX, R_SENSE, DRIVER_ADDRESS);
+
+void setup() {
+  pinMode(EN_PIN, OUTPUT);
+  pinMode(STEP_PIN, OUTPUT);
+  pinMode(DIR_PIN, OUTPUT);
+  digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
+
+                                  // Enable one according to your setup
+//SPI.begin();                    // SPI drivers
+//SERIAL_PORT.begin(115200);      // HW UART drivers
+//driver.beginSerial(115200);     // SW UART drivers
+
+  driver.begin();                 //  SPI: Init CS pins and possible SW SPI pins
+                                  // UART: Init SW UART (if selected) with default 115200 baudrate
+  driver.toff(5);                 // Enables driver in software
+  driver.rms_current(2000);        // Set motor RMS current
+  driver.microsteps(MICROSTEPS);          // Set microsteps to 1/16th
+  Serial.begin(115200);
+
+//driver.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+driver.en_spreadCycle(true);   // Toggle spreadCycle on TMC2208/2209/2224
+  driver.pwm_autoscale(false);     // Needed for stealthChop
+}
+
+bool shaft = false;
+bool forward = true;
+void loop() {
+  
+  //shaft = !shaft;
+  //driver.shaft(shaft);
+   move(forward, 10, 100);
+   delay(1000);
+}
+
+void move(uint16_t dir, float rotation, float spd) {
+  driver.shaft(dir);
+  for (uint16_t i = rotation*MICROSTEPS*MOTOR_STEPS; i>0; i--) {
+    digitalWrite(STEP_PIN, HIGH);
+    delayMicroseconds((1000000/(MICROSTEPS*MOTOR_STEPS)/2)*(60/spd));
+    digitalWrite(STEP_PIN, LOW);
+    delayMicroseconds((1000000/(MICROSTEPS*MOTOR_STEPS)/2)*(60/spd));
+  }
+}
