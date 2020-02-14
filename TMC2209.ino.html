@@ -52,7 +52,7 @@ void loop() {
    delay(1000);
 }
 
-void move(uint16_t dir, float rotation, float spd) {
+void move(uint16_t dir, float rotation, float spd) { // direction (bolean), rotation (in full 360 degree rotations), speed (in RPMs)
   driver.shaft(dir);
   for (uint16_t i = rotation*MICROSTEPS*MOTOR_STEPS; i>0; i--) {
     digitalWrite(STEP_PIN, HIGH);
